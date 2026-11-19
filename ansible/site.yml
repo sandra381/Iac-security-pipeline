@@ -1,25 +1,33 @@
-- hosts: servidores
-  become: yes
+---
+- name: Configurar servidores web
+  hosts: servidores
+  become: true
   tasks:
-    - name: instalar nginx
-      apt: name=nginx state=latest
+    - name: Instalar nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
 
-    - name: descargar script de configuracion
-      get_url:
+    - name: Descargar script de configuracion
+      ansible.builtin.get_url:
         url: https://example.com/config.sh
         dest: /tmp/config.sh
-        validate_certs: no
+        checksum: sha256:0000000000000000000000000000000000000000000000000000000000000000
+        mode: "0644"
+        validate_certs: true
 
-    - name: ejecutar script
-      shell: bash /tmp/config.sh
+    - name: Ejecutar script
+      ansible.builtin.command: bash /tmp/config.sh
+      args:
+        creates: /tmp/config.done
 
-    - name: llamar API interna
-      uri:
+    - name: Llamar API interna
+      ansible.builtin.uri:
         url: https://api.interna.local/registro
-        validate_certs: false
+        validate_certs: true
 
-    - name: archivo de configuracion
-      copy:
+    - name: Archivo de configuracion
+      ansible.builtin.copy:
         src: app.conf
         dest: /etc/app.conf
-        mode: 0777
+        mode: "0644"
