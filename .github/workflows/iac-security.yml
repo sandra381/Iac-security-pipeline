@@ -1,0 +1,79 @@
+name: "IaC Security Gate"
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  security-events: write 
+
+jobs:
+  security-scan:
+    name: Checkov & ansible-lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar herramientas
+        run: |
+          python -m pip install --upgrade pip
+          pip install checkov ansible-core ansible-lint
+
+      # --- ANÁLISIS CON CHECKOV ---
+      - name: "Checkov: Terraform (8 reglas críticas)"
+        run: |
+          checkov -d infra --compact --check CKV_AWS_53,CKV_AWS_54,CKV_AWS_55,CKV_AWS_56,CKV_AWS_24,CKV_AWS_16,CKV_AWS_17,CKV_AWS_293
+
+      - name: "Checkov: Secretos"
+        run: |
+          checkov -d infra --framework secrets --compact
+
+      - name: "Checkov: Ansible"
+        run: |
+          checkov -d ansible --framework ansible --compact
+
+      - name: "Checkov: Dockerfile"
+        run: |
+          checkov -f docker/Dockerfile --framework dockerfile --compact
+
+      - name: "Checkov: Política propia"
+        run: |
+          checkov -d infra --external-checks-dir politicas --check CKV2_CURSO_1 --compact
+
+      # --- ANÁLISIS CON ANSIBLE-LINT ---
+      - name: "ansible-lint: Perfil producción"
+        run: |
+          cd ansible
+          ansible-lint --profile production site.yml
+
+      # --- REPORTE SARIF PARA VER LOS HALLAZGOS EN EL PR ---
+      - name: "Checkov: Generar SARIF"
+        if: always()
+        run: |
+          checkov -d . --output sarif --output-file-path checkov-results.sarif
+
+      - name: Subir SARIF de Checkov
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov-results.sarif
+
+      - name: "ansible-lint: Generar SARIF"
+        if: always()
+        run: |
+          cd ansible
+          ansible-lint --format sarif --sarif-file ../ansible-lint.sarif site.yml
+
+      - name: Subir SARIF de ansible-lint
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ansible-lint.sarif
