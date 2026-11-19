@@ -5,31 +5,34 @@ resource "aws_s3_bucket" "datos" {
  bucket = "galileo-demo-datos"
 }
 resource "aws_s3_bucket_public_access_block" "datos" {
- bucket = aws_s3_bucket.datos.id
- block_public_acls = false
- block_public_policy = false
- ignore_public_acls = false
- restrict_public_buckets = false
+  bucket                  = aws_s3_bucket.datos.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
+
 resource "aws_security_group" "web" {
- name = "web"
- description = "Acceso al servidor web"
- ingress {
- description = "SSH desde cualquier lugar"
- from_port = 22
- to_port = 22
- protocol = "tcp"
- cidr_blocks = ["0.0.0.0/0"]
- }
+  name        = "web"
+  description = "Acceso al servidor web"
+
+  ingress {
+    description = "SSH solo desde la VPN"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["10.10.0.0/24"]
+  }
 }
 resource "aws_db_instance" "db" {
- identifier = "demo-db"
- engine = "postgres"
- instance_class = "db.t3.micro"
- allocated_storage = 20
- username = "admin"
- password = "SuperSecreta123"
- publicly_accessible = true
- storage_encrypted = false
- skip_final_snapshot = true
+  identifier                  = "demo-db"
+  engine                      = "postgres"
+  instance_class              = "db.t3.micro"
+  allocated_storage           = 20
+  username                    = "admin"
+  manage_master_user_password = true
+  publicly_accessible         = false
+  storage_encrypted           = true
+  deletion_protection         = true
+  skip_final_snapshot         = true
 }
