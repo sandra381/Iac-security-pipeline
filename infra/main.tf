@@ -12,6 +12,13 @@ resource "aws_s3_bucket_public_access_block" "datos" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket_versioning" "datos" {
+  bucket = aws_s3_bucket.datos.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 resource "aws_security_group" "web" {
   name        = "web"
   description = "Acceso al servidor web"
