@@ -27,8 +27,7 @@ jobs:
       - name: Instalar herramientas (versiones compatibles con Python 3.11)
         run: |
           python -m pip install --upgrade pip
-          # Versiones fijas y compatibles con Python 3.11
-          pip install checkov==3.4.5 ansible-core==2.19.6 ansible-lint==6.16.0
+          pip install checkov==3.4.5 ansible-core==2.19.6 ansible-lint==25.6.1
 
       # --- GATE 1: CHECKOV ---
       - name: "Gate Checkov: Terraform, Ansible y Dockerfile"
