@@ -78,3 +78,17 @@ resource "aws_iam_role_policy_attachment" "rds_monitoring_attach" {
   role       = aws_iam_role.rds_monitoring.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
 }
+
+resource "aws_s3_bucket" "logs" {
+  bucket = "galileo-logs-${random_id.suffix.hex}"
+}
+
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
+resource "aws_s3_bucket_logging" "datos" {
+  bucket        = aws_s3_bucket.datos.id
+  target_bucket = aws_s3_bucket.logs.id
+  target_prefix = "log/"
+}
