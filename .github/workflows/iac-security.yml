@@ -67,8 +67,21 @@ jobs:
             echo '{"version": "2.1.0", "runs": []}' > "$GITHUB_WORKSPACE/ansible-lint.sarif"
           fi
 
-      - name: Subir SARIF de ansible-lint
+      - name: Subir SARIF de ansible-lint (solo si hay hallazgos)
         if: always()
+        run: |
+          SARIF_FILE="ansible-lint.sarif"
+          # Verificar que el archivo existe y contiene al menos un resultado
+          if [ -f "$SARIF_FILE" ] && jq -e '.runs[].results // empty' "$SARIF_FILE" > /dev/null 2>&1; then
+            echo "El SARIF contiene hallazgos. Subiendo a Code Scanning..."
+            echo "UPLOAD_SARIF=true" >> $GITHUB_ENV
+          else
+            echo "El SARIF está vacío o no existe. Se omite la subida."
+            echo "UPLOAD_SARIF=false" >> $GITHUB_ENV
+          fi
+
+      - name: Subir SARIF de ansible-lint
+        if: always() && env.UPLOAD_SARIF == 'true'
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: ansible-lint.sarif
