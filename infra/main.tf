@@ -17,7 +17,6 @@ resource "random_id" "suffix" {
   byte_length = 4
 }
 
-# CKV_SECRET_6: genera password en runtime, no hardcodeado
 resource "random_password" "db" {
   length  = 32
   special = true
@@ -199,7 +198,6 @@ resource "aws_s3_bucket_notification" "logs" {
   eventbridge = true
 }
 
-# Access logging del bucket datos -> logs
 resource "aws_s3_bucket_logging" "datos" {
   bucket        = aws_s3_bucket.datos.id
   target_bucket = aws_s3_bucket.logs.id
@@ -221,7 +219,6 @@ resource "aws_security_group" "web" {
     cidr_blocks = ["10.10.0.0/24"]
   }
 
-  # CKV_AWS_23 + CKV_AWS_382: descripción + egress restringido a 443
   egress {
     description = "HTTPS de salida"
     from_port   = 443
@@ -232,7 +229,7 @@ resource "aws_security_group" "web" {
 }
 
 # =====================================================================
-# RDS (endurecido + query logging via parameter group)
+# RDS (endurecido + query logging + encryption in transit)
 # =====================================================================
 resource "aws_iam_role" "rds_monitoring" {
   name = "rds-monitoring-role"
@@ -253,7 +250,7 @@ resource "aws_iam_role_policy_attachment" "rds_monitoring_attach" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
 }
 
-# CKV2_AWS_30: parameter group con log_statement = all
+# CKV2_AWS_30 + CKV2_AWS_69: logs + SSL obligatorio
 resource "aws_db_parameter_group" "postgres" {
   name   = "galileo-pg"
   family = "postgres14"
@@ -261,6 +258,12 @@ resource "aws_db_parameter_group" "postgres" {
   parameter {
     name  = "log_statement"
     value = "all"
+  }
+
+  # CKV2_AWS_69: fuerza SSL en todas las conexiones
+  parameter {
+    name  = "rds.force_ssl"
+    value = "1"
   }
 }
 
@@ -274,33 +277,23 @@ resource "aws_db_instance" "db" {
   password             = random_password.db.result
   parameter_group_name = aws_db_parameter_group.postgres.name
 
-  # Backups y disponibilidad
   backup_retention_period = 7
   multi_az                = true
+  storage_encrypted       = true
+  kms_key_id              = aws_kms_key.rds.arn
+  deletion_protection     = true
 
-  # Cifrado en reposo
-  storage_encrypted = true
-  kms_key_id        = aws_kms_key.rds.arn
-
-  # Deletion protection
-  deletion_protection = true
-
-  # Auth y actualizaciones
   auto_minor_version_upgrade          = true
   iam_database_authentication_enabled = true
 
-  # Monitoring y Performance Insights
   monitoring_interval             = 60
   monitoring_role_arn             = aws_iam_role.rds_monitoring.arn
   performance_insights_enabled    = true
   performance_insights_kms_key_id = aws_kms_key.rds.arn
 
-  # Logs exportados (incluye postgresql para CKV2_AWS_30)
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
-
-  # Tags y snapshots
-  copy_tags_to_snapshot = true
-  publicly_accessible   = false
+  copy_tags_to_snapshot           = true
+  publicly_accessible             = false
 }
 
 # =====================================================================
@@ -473,7 +466,6 @@ resource "aws_s3_bucket_notification" "logs_replica" {
 }
 
 # ---- Access logging de los buckets réplica ----
-# (usa logs_replica como destino, misma región us-west-2)
 resource "aws_s3_bucket_logging" "datos_replica" {
   provider      = aws.replica
   bucket        = aws_s3_bucket.datos_replica.id
@@ -488,7 +480,7 @@ resource "aws_s3_bucket_logging" "logs_replica" {
   target_prefix = "log-logs/"
 }
 
-# ---- Configuración de replicación (desde principal hacia réplica) ----
+# ---- Configuración de replicación ----
 resource "aws_s3_bucket_replication_configuration" "datos" {
   bucket = aws_s3_bucket.datos.id
   role   = aws_iam_role.replication.arn
