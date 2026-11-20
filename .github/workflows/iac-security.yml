@@ -24,11 +24,11 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Instalar herramientas (versiones fijas)
+      - name: Instalar herramientas (versiones compatibles con Python 3.11)
         run: |
           python -m pip install --upgrade pip
-          # Versiones fijas para garantizar reproducibilidad
-          pip install checkov==3.4.5 ansible-core==2.22.0 ansible-lint==26.11.0
+          # Versiones fijas y compatibles con Python 3.11
+          pip install checkov==3.4.5 ansible-core==2.19.6 ansible-lint==6.16.0
 
       # --- GATE 1: CHECKOV ---
       - name: "Gate Checkov: Terraform, Ansible y Dockerfile"
@@ -52,7 +52,7 @@ jobs:
 
       - name: Subir SARIF de Checkov
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4   # Actualizado a v4
         with:
           sarif_file: reportes/results_sarif.sarif
           category: checkov
@@ -65,7 +65,7 @@ jobs:
 
       - name: Subir SARIF de ansible-lint
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4   # Actualizado a v4
         with:
           sarif_file: ansible-lint.sarif
           category: ansible-lint
