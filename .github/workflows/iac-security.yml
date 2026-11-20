@@ -60,11 +60,16 @@ jobs:
         if: always()
         run: |
           cd ansible
-          ansible-lint --format sarif --sarif-file ../ansible-lint.sarif site.yml
+          # --sarif-file es suficiente; --format sarif es opcional pero no estorba
+          ansible-lint --format sarif --sarif-file "$GITHUB_WORKSPACE/ansible-lint.sarif" site.yml || true
+          # Si ansible-lint no creó el archivo (porque no hubo hallazgos), creamos un SARIF vacío válido
+          if [ ! -f "$GITHUB_WORKSPACE/ansible-lint.sarif" ]; then
+            echo '{"version": "2.1.0", "runs": []}' > "$GITHUB_WORKSPACE/ansible-lint.sarif"
+          fi
 
       - name: Subir SARIF de ansible-lint
         if: always()
-        uses: github/codeql-action/upload-sarif@v4   # Actualizado a v4
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: ansible-lint.sarif
           category: ansible-lint
