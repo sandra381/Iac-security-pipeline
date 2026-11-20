@@ -25,14 +25,33 @@ resource "aws_security_group" "web" {
   }
 }
 resource "aws_db_instance" "db" {
-  identifier                  = "demo-db"
-  engine                      = "postgres"
-  instance_class              = "db.t3.micro"
-  allocated_storage           = 20
-  username                    = "admin"
-  manage_master_user_password = true
-  publicly_accessible         = false
-  storage_encrypted           = true
-  deletion_protection         = true
-  skip_final_snapshot         = true
+  # ... lo que ya tienes ...
+
+  auto_minor_version_upgrade            = true           # CKV_AWS_226
+  performance_insights_enabled          = true           # CKV_AWS_353
+  iam_database_authentication_enabled   = true           # CKV_AWS_161
+  multi_az                              = true           # CKV_AWS_157
+  monitoring_interval                   = 1              # CKV_AWS_118
+  monitoring_role_arn                   = aws_iam_role.rds_monitoring.arn
+  copy_tags_to_snapshot                 = true           # CKV2_AWS_60
+  backup_retention_period               = 7              # CKV2_CURSO_1
+  enabled_cloudwatch_logs_exports       = ["postgresql", "upgrade"]  # CKV_AWS_129, CKV2_AWS_30
+}
+
+# Necesario para el monitoring_interval
+resource "aws_iam_role" "rds_monitoring" {
+  name = "rds-monitoring-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = { Service = "monitoring.rds.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "rds_monitoring_attach" {
+  role       = aws_iam_role.rds_monitoring.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
 }
