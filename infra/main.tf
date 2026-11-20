@@ -92,3 +92,14 @@ resource "aws_s3_bucket_logging" "datos" {
   target_bucket = aws_s3_bucket.logs.id
   target_prefix = "log/"
 }
+
+resource "aws_s3_bucket_lifecycle_configuration" "datos" {
+  bucket = aws_s3_bucket.datos.id
+  rule {
+    id     = "expirar-objetos"
+    status = "Enabled"
+    expiration {
+      days = 365
+    }
+  }
+}
