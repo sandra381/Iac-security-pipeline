@@ -137,6 +137,16 @@ Con estas pruebas se comprobó que el pipeline detecta configuraciones inseguras
 
 ## 4. Evidencia SARIF
 
+Los resultados de Checkov se guardan en el archivo `reportes/results_sarif.sarif`. SARIF es un formato que permite guardar los resultados de un análisis de seguridad para luego mostrarlos en herramientas como GitHub Code Scanning.
+
+Estos resultados se publican automáticamente, incluso cuando la revisión de seguridad falla. Para verificarlo, podemos entrar a la sección **Security → Code scanning** de GitHub y revisar los problemas encontrados.
+
+En la siguiente captura se muestran los 24 hallazgos encontrados por Checkov en el pull request #1. Cada uno muestra qué regla no se cumplió, en qué archivo se encontró y en qué línea está el problema.
+
+También aparece la política de seguridad que creamos, lo que nos permite comprobar que se está revisando dentro del pipeline.
+
+![Hallazgos de Checkov en Code Scanning](../imgs/code_scan_hallazgos.png)
+
 ## 5. Remediación
 
 ## 6. Excepción documentada
