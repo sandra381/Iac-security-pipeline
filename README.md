@@ -45,4 +45,4 @@ ansible-lint --profile production ansible/
 ## 📄 Informe de la Tarea
 El análisis detallado de la línea base, la evidencia de los Pull Requests (bloqueo y remediación), la tabla antes/después de las correcciones, y las conclusiones del proyecto se encuentran documentados en el informe oficial:
 
-Ver el informe completo: [Ver Informe PDF](docs/informe.md)
+Ver el informe completo: [Ver Informe PDF](docs/informe.pdf)
