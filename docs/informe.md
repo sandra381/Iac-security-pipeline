@@ -118,9 +118,9 @@ Al crear el pull request, el pipeline se ejecutó automáticamente y la revisió
 
 ### 3.2 La protección de rama impide el merge
 
-La rama `main` tiene configurada una regla de protección que exige realizar los cambios mediante un pull request y que la revisión **Checkov & ansible-lint** termine correctamente antes de hacer el merge.
+La rama `main` tiene configurada una regla de protección que exige realizar los cambios mediante un pull request y que la revisión Checkov & ansible-lint termine correctamente antes de hacer el merge.
 
-En el pull request, este check aparece marcado como **Required**, es decir, obligatorio. Como el check falló, GitHub desactivó el botón **Merge pull request** y no permite incorporar el cambio a `main`.
+En el pull request, este check aparece marcado como Required, es decir, obligatorio. Como el check falló, GitHub desactivó el botón Merge pull request y no permite incorporar el cambio a `main`.
 
 ![PR bloqueado por el check obligatorio](../imgs/iac_security_gate_block_merge.png)
 
@@ -139,7 +139,7 @@ Con estas pruebas se comprobó que el pipeline detecta configuraciones inseguras
 
 Los resultados de Checkov se guardan en el archivo `reportes/results_sarif.sarif`. SARIF es un formato que permite guardar los resultados de un análisis de seguridad para luego mostrarlos en herramientas como GitHub Code Scanning.
 
-Estos resultados se publican automáticamente, incluso cuando la revisión de seguridad falla. Para verificarlo, podemos entrar a la sección **Security → Code scanning** de GitHub y revisar los problemas encontrados.
+Estos resultados se publican automáticamente, incluso cuando la revisión de seguridad falla. Para verificarlo, podemos entrar a la sección Security → Code scanning de GitHub y revisar los problemas encontrados.
 
 En la siguiente captura se muestran los 24 hallazgos encontrados por Checkov en el pull request #1. Cada uno muestra qué regla no se cumplió, en qué archivo se encontró y en qué línea está el problema.
 
@@ -309,5 +309,6 @@ Se utilizó Claude (Anthropic) como apoyo para:
 * Apoyar en el código.
 * Analizar los resultados que mostraba la terminal e identificar algunos problemas.
 * Mejorar la redacción del informe.
+* Dar formato al informe y convertirlo a PDF a partir del contenido redactado por el equipo.
 
 Los resultados de Checkov y ansible-lint que aparecen en el informe se ejecutaron y verificaron localmente, y las capturas corresponden a esas ejecuciones.
