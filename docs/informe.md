@@ -190,6 +190,38 @@ Después de aplicar todas las correcciones, la revisión de Checkov y ansible-li
 
 ## 6. Excepción documentada
 
+En el archivo `excepcion/main.tf` se dejó una sola excepción utilizando `checkov:skip`, para que Checkov no marque como error el control `CKV2_AWS_6`, que revisa si los buckets S3 tienen bloqueado el acceso público.
+
+En este caso se hizo una excepción porque el bucket se utiliza para guardar los archivos de una página web que debe ser pública.
+
+~~~hcl
+resource "aws_s3_bucket" "sitio_publico" {
+ # checkov:skip=CKV2_AWS_6: sitio web estático público, aprobado en RIESGO-042, vence 2027-01-31
+ bucket = "galileo-sitio-web"
+}
+~~~
+
+| Elemento | Detalle |
+|---|---|
+| Control omitido | `CKV2_AWS_6` |
+| Recurso | `aws_s3_bucket.sitio_publico` |
+| Justificación | El bucket guarda archivos de una página web pública |
+| Referencia de aprobación | RIESGO-042 |
+| Quién debería aprobarlo | Oficial de seguridad de la información y dueño del riesgo (responsable del sitio web) |
+| Fecha de vencimiento | 31 de enero de 2027 |
+
+### 6.1 ¿Por qué se acepta el riesgo?
+
+Se acepta el riesgo porque el bucket necesita almacenar archivos de una página web pública, como imágenes y archivos HTML. Por eso, se permite esta excepción, siempre que no contenga información privada o sensible. Si llegara a almacenar este tipo de información, ya no sería adecuado mantener la excepción.
+
+La excepción se aplicó únicamente a este bucket, ya que los demás deben mantener sus controles de seguridad para proteger la información que almacenan.
+
+### 6.2 ¿Quién debería aprobarlo?
+
+La excepción debería ser aprobada por el oficial de seguridad de la información y el dueño del riesgo, ya que ellos deben revisar que el riesgo sea aceptable y que el bucket no contenga información privada.
+
+También se estableció una fecha de vencimiento para el 31 de enero de 2027. Al llegar esa fecha, se deberá revisar si todavía es necesario mantener la excepción, ya que las condiciones pueden cambiar y podría empezar a almacenarse información privada en ese bucket.
+
 ## 7. Política propia
 
 ## 8. Conclusiones
