@@ -149,6 +149,45 @@ También aparece la política de seguridad que creamos, lo que nos permite compr
 
 ## 5. Remediación
 
+Las correcciones se realizaron en la rama `remediacion-hallazgos`, mediante un pull request diferente al de la prueba anterior. Los commits se organizaron según el tipo de problema que se estaba corrigiendo.
+
+**Pull request:** [#3 Remediacion hallazgos](https://github.com/sandra381/Iac-security-pipeline/pull/3)
+
+Antes de realizar las correcciones, Checkov encontraba 16 fallas en el archivo `infra/main.tf`. Después de corregirlas, se ejecutó nuevamente el análisis y ya no se encontraron fallas. Además, se aprobaron 126 controles de seguridad.
+
+![Escaneo antes de la remediación](../imgs/remediacion_antes.png)
+
+![Escaneo después de la remediación](../imgs/remediacion_despues.png)
+
+### 5.1 Correcciones realizadas
+
+En la siguiente tabla se muestran los problemas encontrados, los cambios realizados y los resultados obtenidos después de ejecutar nuevamente Checkov.
+
+| ID | Recurso | Cambio realizado | Antes | Después |
+|---|---|---|---|---|
+| CKV_AWS_21 | `aws_s3_bucket.datos` | Se activó el versionado del bucket | FAILED | PASSED |
+| CKV_AWS_145 | `aws_s3_bucket.datos` | Se configuró el cifrado con una llave KMS | FAILED | PASSED |
+| CKV_AWS_18 | `aws_s3_bucket.datos` | Se activó el registro de accesos | FAILED | PASSED |
+| CKV2_AWS_61 | `aws_s3_bucket.datos` | Se configuraron reglas para administrar los archivos del bucket | FAILED | PASSED |
+| CKV2_AWS_5 | `aws_security_group.web` | Se asignó el grupo de seguridad a una instancia EC2 | FAILED | PASSED |
+| CKV_AWS_157 | `aws_db_instance.db` | Se activó Multi-AZ | FAILED | PASSED |
+| CKV_AWS_353 | `aws_db_instance.db` | Se activó Performance Insights | FAILED | PASSED |
+| CKV_AWS_118 | `aws_db_instance.db` | Se activó el monitoreo mejorado | FAILED | PASSED |
+| CKV_AWS_226 | `aws_db_instance.db` | Se activaron las actualizaciones menores automáticas | FAILED | PASSED |
+| CKV_AWS_161 | `aws_db_instance.db` | Se activó la autenticación con IAM | FAILED | PASSED |
+| CKV2_AWS_60 | `aws_db_instance.db` | Se configuró la copia de etiquetas a los respaldos | FAILED | PASSED |
+| CKV_AWS_129 | `aws_db_instance.db` | Se configuró el envío de logs de PostgreSQL a CloudWatch | FAILED | PASSED |
+| CKV2_CURSO_1 | `aws_db_instance.db` | Se configuró la retención de respaldos durante 7 días | FAILED | PASSED |
+| CKV2_AWS_62 | `aws_s3_bucket.datos` | Se activaron las notificaciones de eventos | FAILED | PASSED |
+| CKV2_AWS_30 | `aws_db_instance.db` | Se agregó una configuración para registrar las consultas | FAILED | PASSED |
+| CKV_AWS_144 | `aws_s3_bucket.datos` | Se configuró la replicación a otra región | FAILED | PASSED |
+
+Durante las correcciones se agregaron nuevos recursos, como buckets, llaves KMS y una instancia EC2. Al revisarlos, Checkov encontró otros problemas de seguridad que también se corrigieron en el momento. Entre ellos, la contraseña de la base de datos dejó de estar escrita en el código y ahora se genera automáticamente, y se configuró la base de datos para que solo acepte conexiones seguras con SSL.
+
+Después de aplicar todas las correcciones, la revisión de Checkov y ansible-lint pasó sin problemas y los cambios se unieron a la rama `main`.
+
+![PR de remediación con todos los checks en verde](../imgs/remedacion_hallazgos_check.png)
+
 ## 6. Excepción documentada
 
 ## 7. Política propia
