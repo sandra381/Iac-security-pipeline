@@ -291,4 +291,23 @@ Resultado: `Passed checks: 1, Failed checks: 0`
 
 ## 8. Conclusiones
 
+Durante las pruebas se comprobó que el pipeline detectó y bloqueó los cambios inseguros del pull request #1. Luego, en el pull request #3, se corrigieron los problemas encontrados y esto permitió que el archivo `infra/main.tf` pasara las revisiones de seguridad sin fallas. Sin embargo, se identificaron algunos problemas que las herramientas no lograron detectar.
+
+* En el Dockerfile había una contraseña escrita directamente en el código que Checkov no detectó. Para encontrar este tipo de problemas se podría utilizar Gitleaks, que también permite revisar el historial de commits.
+* El archivo `site.yml` daba errores de indentación, por lo que ansible-lint no pudo analizarlo correctamente y no logró detectar otros problemas, como los certificados sin verificar y los permisos `0777`. Para evitar esto, se podría agregar al pipeline el paso `ansible-playbook --syntax-check`, que revisa primero que el archivo esté escrito correctamente.
+* El control de respaldos de Checkov aprobó la base de datos aunque no tenía definidos los días de respaldo. Por eso, creamos la política `CKV2_CURSO_1`, que exige guardar los respaldos al menos 7 días. Esto demuestra que también es necesario crear reglas propias para detectar problemas que Checkov no identifica.
+
+Con esto comprobamos que Checkov y ansible-lint ayudan a detectar problemas de seguridad, pero no pueden identificar todos los errores. Por eso, es importante complementar estas herramientas con revisiones manuales y otras herramientas de seguridad.
+
 ## 9. Uso de IA
+
+Se utilizó Claude (Anthropic) como apoyo para:
+
+* Entender mejor el tema de seguridad en IaC y cómo se aplicaba en el laboratorio.
+* Entender la guía del laboratorio y los archivos del proyecto.
+* Resolver problemas durante la configuración del pipeline.
+* Apoyar en el código.
+* Analizar los resultados que mostraba la terminal e identificar algunos problemas.
+* Mejorar la redacción del informe.
+
+Los resultados de Checkov y ansible-lint que aparecen en el informe se ejecutaron y verificaron localmente, y las capturas corresponden a esas ejecuciones.
