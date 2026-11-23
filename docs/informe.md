@@ -71,7 +71,7 @@ Se revisan los archivos de Terraform, Ansible y Dockerfile para detectar configu
 | Ansible | `ansible/` | Checkov y ansible-lint |
 | Dockerfile | `docker/` | Checkov |
 | Contraseñas o secretos en el código | Carpetas analizadas | Checkov |
-| Política propia del equipo | `politicas/` | Checkov |
+| Política propia del equipo (regla en `politicas/`) | Se aplica sobre `infra/` | Checkov |
 
 ### 2.2 ¿En qué momento se ejecuta?
 
@@ -105,6 +105,35 @@ pip install checkov==3.4.5 ansible-core==2.19.6 ansible-lint==25.6.1
 Se utilizaron versiones fijas para que siempre se trabaje con las mismas versiones y evitar que una actualización cambie las reglas de seguridad o los resultados de las pruebas.
 
 ## 3. Evidencia del gate
+
+Para comprobar que el pipeline bloquea los cambios inseguros, se creó un pull request donde se modificó intencionalmente una configuración de seguridad. En el commit `f8ca3e42` se cambió la configuración SSH para permitir conexiones desde cualquier dirección IP.
+
+**Pull request:** [#1 Prueba: abro el puerto 22 (debe fallar)](https://github.com/sandra381/Iac-security-pipeline/pull/1)
+
+### 3.1 El job falla
+
+Al crear el pull request, el pipeline se ejecutó automáticamente y la revisión de seguridad de Checkov falló. Se encontraron 17 fallas, entre ellas `CKV_AWS_24`, que indica que el puerto 22 permite conexiones desde cualquier dirección IP, lo que representa un riesgo de seguridad.
+
+![Job fallido en GitHub Actions](../imgs/checkov_hallazgos_encontrados.png)
+
+### 3.2 La protección de rama impide el merge
+
+La rama `main` tiene configurada una regla de protección que exige realizar los cambios mediante un pull request y que la revisión **Checkov & ansible-lint** termine correctamente antes de hacer el merge.
+
+En el pull request, este check aparece marcado como **Required**, es decir, obligatorio. Como el check falló, GitHub desactivó el botón **Merge pull request** y no permite incorporar el cambio a `main`.
+
+![PR bloqueado por el check obligatorio](../imgs/iac_security_gate_block_merge.png)
+
+También se comprobó el funcionamiento de esta protección al intentar realizar un push directamente a `main` desde la computadora de una integrante del equipo. GitHub rechazó el cambio porque no cumplía con las reglas configuradas.
+
+~~~
+remote: error: GH013: Repository rule violations found for refs/heads/main.
+remote: - Changes must be made through a pull request.
+remote: - Required status check "Checkov & ansible-lint" is expected.
+! [remote rejected] main -> main (push declined due to repository rule violations)
+~~~
+
+Con estas pruebas se comprobó que el pipeline detecta configuraciones inseguras y que la protección de la rama evita que los cambios se incorporen a `main` sin pasar las revisiones necesarias.
 
 ## 4. Evidencia SARIF
 
