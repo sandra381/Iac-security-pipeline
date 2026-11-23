@@ -112,7 +112,7 @@ Para comprobar que el pipeline bloquea los cambios inseguros, se creó un pull r
 
 ### 3.1 El job falla
 
-Al crear el pull request, el pipeline se ejecutó automáticamente y la revisión de seguridad de Checkov falló. Se encontraron 17 fallas, entre ellas `CKV_AWS_24`, que indica que el puerto 22 permite conexiones desde cualquier dirección IP, lo que representa un riesgo de seguridad.
+Al crear el pull request, el pipeline se ejecutó automáticamente y la revisión de seguridad de Checkov falló. Solo en los archivos de Terraform se encontraron 17 fallas, entre ellas `CKV_AWS_24`, que indica que el puerto 22 permite conexiones desde cualquier dirección IP, lo que representa un riesgo de seguridad.
 
 ![Job fallido en GitHub Actions](../imgs/checkov_hallazgos_encontrados.png)
 
@@ -223,6 +223,71 @@ La excepción debería ser aprobada por el oficial de seguridad de la informaci�
 También se estableció una fecha de vencimiento para el 31 de enero de 2027. Al llegar esa fecha, se deberá revisar si todavía es necesario mantener la excepción, ya que las condiciones pueden cambiar y podría empezar a almacenarse información privada en ese bucket.
 
 ## 7. Política propia
+
+Se creó una política de seguridad en el archivo `politicas/respaldos.yaml`, identificada como `CKV2_CURSO_1`. Esta política revisa que las bases de datos tengan configurados respaldos de al menos 7 días.
+
+~~~yaml
+metadata:
+  id: "CKV2_CURSO_1"
+  name: "Las bases de datos deben guardar respaldos al menos 7 dias"
+  category: "BACKUP_AND_RECOVERY"
+definition:
+  cond_type: "attribute"
+  resource_types:
+    - "aws_db_instance"
+  attribute: "backup_retention_period"
+  operator: "greater_than_or_equal"
+  value: 7
+~~~
+
+Se creó esta política porque, en la línea base, el control `CKV_AWS_133` de Checkov salió aprobado aunque la base de datos no tenía definido cuántos días se guardarían los respaldos. Por eso, se decidió agregar una regla que exija guardar los respaldos durante al menos 7 días, para poder recuperar la información en caso de algún problema.
+
+### 7.1 Integración al pipeline
+
+La política se agregó al pipeline utilizando `--external-checks-dir politicas`, para que Checkov también la revise al analizar los archivos del proyecto.
+
+~~~bash
+checkov -d infra -d ansible -f docker/Dockerfile \
+  --external-checks-dir politicas \
+  --compact --quiet
+~~~
+
+En el pull request #1, la política apareció entre los problemas encontrados en Code Scanning, como se muestra en la captura de la sección 4.
+
+Después, en el pull request #3, se configuraron los respaldos durante 7 días y la política pasó de FAILED a PASSED, como se muestra en la tabla de la sección 5.
+
+### 7.2 Caso que falla
+
+Para comprobar que la política funcionara, se creó un archivo de prueba con una base de datos configurada para guardar respaldos durante solo 3 días.
+
+~~~hcl
+resource "aws_db_instance" "db" {
+  identifier              = "demo-db"
+  engine                  = "postgres"
+  instance_class          = "db.t3.micro"
+  backup_retention_period = 3
+}
+~~~
+
+Al ejecutar Checkov, la política marcó FAILED porque los 3 días configurados no cumplían con el mínimo de 7 días.
+
+Resultado: `Passed checks: 0, Failed checks: 1`
+
+![Caso que falla de la política propia](../imgs/politica_falla.png)
+
+### 7.3 Caso que pasa
+
+Después se modificó el mismo archivo, cambiando los días de respaldo de 3 a 7.
+
+~~~hcl
+backup_retention_period = 7
+~~~
+
+Al ejecutar nuevamente Checkov, la política marcó PASSED porque ahora sí cumplía con los 7 días establecidos.
+
+Resultado: `Passed checks: 1, Failed checks: 0`
+
+![Caso que pasa de la política propia](../imgs/politica_pasa.png)
 
 ## 8. Conclusiones
 
